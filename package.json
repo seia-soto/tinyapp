@@ -1,0 +1,36 @@
+{
+  "name": "tinyapp",
+  "version": "1.0.0",
+  "description": "A project to check if in-app browser injects the script or not.",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/index.jsx --bundle --outfile=pub/out.js",
+    "start": "serve -s pub"
+  },
+  "keywords": [],
+  "author": "HoJeong Go <seia@outlook.kr>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.11.0",
+    "@types/react": "^18.0.21",
+    "@types/react-dom": "^18.0.6",
+    "@typescript-eslint/eslint-plugin": ">=5.31.0",
+    "@typescript-eslint/parser": ">=5.31.0",
+    "esbuild": "^0.15.11",
+    "eslint": ">=8.0.0",
+    "eslint-config-standard-with-typescript": "^23.0.0",
+    "eslint-config-xo": "^0.42.0",
+    "eslint-config-xo-typescript": "^0.53.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-react": "^7.31.10",
+    "serve": "^14.0.1",
+    "tslib": "^2.4.0",
+    "typescript": ">=4.4"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
