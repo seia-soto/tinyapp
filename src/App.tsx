@@ -132,25 +132,42 @@ const Statics: React.FC = () => {
 
 const EventListeners: React.FC = () => {
 	const [listeners, setListeners] = React.useState<string[]>([]);
+	const [logs, setLogs] = React.useState<string[]>([]);
 
 	React.useEffect(() => {
 		const unload: Array<() => void> = [];
 
 		const hookElementEvent = (element: Element) => {
-			const legacy = element.addEventListener;
+			const lagacyElement = element;
+			const legacyAddEventListener = element.addEventListener;
 
 			element.addEventListener = new Proxy(
-				legacy,
+				legacyAddEventListener,
 				{
 					apply(target, thisArg, argArray) {
-						setListeners([...listeners, argArray[0]]);
+						setListeners(state => [...state, argArray[0] as string]);
+
+						const fn = argArray[1] as (..._: any[]) => any;
 
 						// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-						return Reflect.apply(target, thisArg, argArray);
+						return Reflect.apply(target, thisArg, [
+							argArray[0],
+							(...args: any) => {
+								fn(...args);
+
+								setLogs(state => [...state, JSON.stringify([argArray[0], args])]);
+							},
+						]);
 					},
+				},
+			);
+
+			element = new Proxy(
+				element,
+				{
 					set(target, p, newValue, receiver) {
 						if (typeof p === 'string' && p.startsWith('on')) {
-							setListeners([...listeners, p]);
+							setListeners(state => [...state, p]);
 						}
 
 						return Reflect.set(target, p, newValue, receiver);
@@ -159,7 +176,8 @@ const EventListeners: React.FC = () => {
 			);
 
 			unload.push(() => {
-				element.addEventListener = legacy;
+				element.addEventListener = legacyAddEventListener;
+				element = lagacyElement;
 			});
 		};
 
@@ -168,10 +186,19 @@ const EventListeners: React.FC = () => {
 
 			parent[prop] = new Proxy(legacyMethod, {
 				apply(target, thisArg, argArray) {
-					setListeners([...listeners, argArray[0]]);
+					setListeners(state => [...state, argArray[0] as string]);
+
+					const fn = argArray[1] as (..._: any[]) => any;
 
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-					return Reflect.apply(target, thisArg, argArray);
+					return Reflect.apply(target, thisArg, [
+						argArray[0],
+						(...args: any) => {
+							fn(...args);
+
+							setLogs(state => [...state, JSON.stringify([argArray[0], args])]);
+						},
+					]);
 				},
 			});
 
@@ -187,7 +214,7 @@ const EventListeners: React.FC = () => {
 		observerController.subscriptions.push(muts => {
 			for (const mut of muts) {
 				if (mut.attributeName?.startsWith('on')) {
-					setListeners([...listeners, mut.attributeName]);
+					setListeners(state => [...state, mut.attributeName!]);
 				}
 			}
 		});
@@ -210,6 +237,15 @@ const EventListeners: React.FC = () => {
 				}
 				{
 					!listeners.length && <li>No event listener has been attached so far.</li>
+				}
+			</ul>
+
+			<ul>
+				{
+					logs.map((log, i) => <li key={`${log}${i}`}>{log}</li>)
+				}
+				{
+					!logs.length && <li>No arguments has been passed so far.</li>
 				}
 			</ul>
 		</div>
@@ -277,6 +313,15 @@ const Requests: React.FC = () => {
 	);
 };
 
+const Cookies: React.FC = () => (
+	<div className='container'>
+		<h2>Cookies</h2>
+		<p>We show client-side cookies set in the website. By default we do not set any cookie, so shown are all from in-app browser.</p>
+
+		<p>Cookie string: {document.cookie.toString()}</p>
+	</div>
+);
+
 const App: React.FC = () => {
 	React.useEffect(() => {
 		observerController.observer.observe(document.querySelector('html') as HTMLElement, {
@@ -297,6 +342,7 @@ const App: React.FC = () => {
 			<Statics />
 			<EventListeners />
 			<Requests />
+			<Cookies />
 		</>
 	);
 };
