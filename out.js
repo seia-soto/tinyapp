@@ -22952,35 +22952,57 @@
   };
   var EventListeners = () => {
     const [listeners, setListeners] = React.useState([]);
+    const [logs, setLogs] = React.useState([]);
     React.useEffect(() => {
       const unload = [];
       const hookElementEvent = (element) => {
-        const legacy = element.addEventListener;
+        const lagacyElement = element;
+        const legacyAddEventListener = element.addEventListener;
         element.addEventListener = new Proxy(
-          legacy,
+          legacyAddEventListener,
           {
             apply(target, thisArg, argArray) {
-              setListeners([...listeners, argArray[0]]);
-              return Reflect.apply(target, thisArg, argArray);
-            },
+              setListeners((state) => [...state, argArray[0]]);
+              const fn = argArray[1];
+              return Reflect.apply(target, thisArg, [
+                argArray[0],
+                (...args) => {
+                  fn(...args);
+                  setLogs((state) => [...state, JSON.stringify([argArray[0], args])]);
+                }
+              ]);
+            }
+          }
+        );
+        element = new Proxy(
+          element,
+          {
             set(target, p, newValue, receiver) {
               if (typeof p === "string" && p.startsWith("on")) {
-                setListeners([...listeners, p]);
+                setListeners((state) => [...state, p]);
               }
               return Reflect.set(target, p, newValue, receiver);
             }
           }
         );
         unload.push(() => {
-          element.addEventListener = legacy;
+          element.addEventListener = legacyAddEventListener;
+          element = lagacyElement;
         });
       };
       const createProxyForGlobals = (parent, prop) => {
         const legacyMethod = parent[prop];
         parent[prop] = new Proxy(legacyMethod, {
           apply(target, thisArg, argArray) {
-            setListeners([...listeners, argArray[0]]);
-            return Reflect.apply(target, thisArg, argArray);
+            setListeners((state) => [...state, argArray[0]]);
+            const fn = argArray[1];
+            return Reflect.apply(target, thisArg, [
+              argArray[0],
+              (...args) => {
+                fn(...args);
+                setLogs((state) => [...state, JSON.stringify([argArray[0], args])]);
+              }
+            ]);
           }
         });
         unload.push(() => {
@@ -22994,7 +23016,7 @@
         var _a;
         for (const mut of muts) {
           if ((_a = mut.attributeName) == null ? void 0 : _a.startsWith("on")) {
-            setListeners([...listeners, mut.attributeName]);
+            setListeners((state) => [...state, mut.attributeName]);
           }
         }
       });
@@ -23008,7 +23030,9 @@
       className: "container"
     }, /* @__PURE__ */ React.createElement("h2", null, "Event Listeners"), /* @__PURE__ */ React.createElement("p", null, "This section shows the catchable event listener attachments."), /* @__PURE__ */ React.createElement("ul", null, listeners.map((listener, i) => /* @__PURE__ */ React.createElement("li", {
       key: `${listener}${i}`
-    }, listener)), !listeners.length && /* @__PURE__ */ React.createElement("li", null, "No event listener has been attached so far.")));
+    }, listener)), !listeners.length && /* @__PURE__ */ React.createElement("li", null, "No event listener has been attached so far.")), /* @__PURE__ */ React.createElement("ul", null, logs.map((log, i) => /* @__PURE__ */ React.createElement("li", {
+      key: `${log}${i}`
+    }, log)), !logs.length && /* @__PURE__ */ React.createElement("li", null, "No arguments has been passed so far.")));
   };
   var Requests = () => {
     const [urls, setUrls] = React.useState([]);
@@ -23046,6 +23070,9 @@
       key: `${url}${i}`
     }, url)), !urls.length && /* @__PURE__ */ React.createElement("li", null, "No request has been made so far.")));
   };
+  var Cookies = () => /* @__PURE__ */ React.createElement("div", {
+    className: "container"
+  }, /* @__PURE__ */ React.createElement("h2", null, "Cookies"), /* @__PURE__ */ React.createElement("p", null, "We show client-side cookies set in the website. By default we do not set any cookie, so shown are all from in-app browser."), /* @__PURE__ */ React.createElement("p", null, "Cookie string: ", document.cookie.toString()));
   var App = () => {
     React.useEffect(() => {
       observerController.observer.observe(document.querySelector("html"), {
@@ -23058,7 +23085,7 @@
         observerController.subscriptions = [];
       };
     }, []);
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Heading, null), /* @__PURE__ */ React.createElement(Statics, null), /* @__PURE__ */ React.createElement(EventListeners, null), /* @__PURE__ */ React.createElement(Requests, null));
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Heading, null), /* @__PURE__ */ React.createElement(Statics, null), /* @__PURE__ */ React.createElement(EventListeners, null), /* @__PURE__ */ React.createElement(Requests, null), /* @__PURE__ */ React.createElement(Cookies, null));
   };
   var App_default = App;
 
